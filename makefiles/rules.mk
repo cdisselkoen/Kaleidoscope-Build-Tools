@@ -23,7 +23,7 @@ astyle:
 
 travis-test: travis-smoke-examples travis-check-astyle
 
-test: smoke-examples check-astyle cpplint-noisy check-docs
+test: smoke-examples check-astyle cpplint-noisy check-docs regression-test
 
 smoke-examples:
 	$(KALEIDOSCOPE_BUILDER_DIR)/kaleidoscope-builder build-all 
@@ -41,6 +41,9 @@ cpplint-noisy:
 
 cpplint:
 	$(PLUGIN_TEST_SUPPORT_DIR)/quality/cpplint.py  --quiet --filter=-whitespace,-legal/copyright,-build/include,-readability/namespace  --recursive --extensions=cpp,h,ino src examples
+
+regression-test:
+	$(PLUGIN_TEST_SUPPORT_DIR)/quality/regression_test
 
 ## NOTE: HERE BE DRAGONS, DO NOT CLEAN THIS UP!
 # When building outside of Arduino-Boards, we want to use the current library,

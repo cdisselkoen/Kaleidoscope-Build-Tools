@@ -1,0 +1,101 @@
+#!/bin/bash
+
+function run_test {
+
+printf "$(cat $1.desc)... "
+../output/$(cat $1.sketch)/$(cat $1.sketch)-latest.elf $1.input >/dev/null
+
+if [ -e $1.usb ]; then
+  if [ -e results/USB.txt ]; then
+    if [[ $(diff $1.usb results/USB.txt 2>&1) ]]; then
+      printf "USB output mismatch!\n\n"
+      diff $1.usb results/USB.txt
+      return 1
+    fi
+  else
+    printf "Expected USB output, got none!\n\n"
+    return 1
+  fi
+else
+  if [ -e results/USB.txt ]; then
+    printf "Got USB output, expected none!\n\n"
+    return 1
+  fi
+fi
+
+if [ -e $1.serial0 ]; then
+  if [ -e results/serial0.txt ]; then
+    if [[ $(diff $1.serial results/serial0.txt 2>&1) ]]; then
+      printf "Serial output mismatch!\n\n"
+      diff $1.serial0 results/serial0.txt
+      return 1
+    fi
+  else
+    printf "Expected serial output, got none!\n\n"
+    return 1
+  fi
+else
+  if [ -e results/serial0.txt ]; then
+    printf "Got serial output, expected none!\n\n"
+    return 1
+  fi
+fi
+
+printf "passed\n"
+return 0
+
+} # end function run_test
+
+function do_plugin {
+
+  printf "\nEntering $1\n"
+  cd $1
+
+  if ! [ -d tests ]; then
+    printf "No tests/ folder, moving on\n"
+    return 0
+  fi
+
+  printf "Building sketches...\n"
+  BOARD=virtual make
+  if [ $? -ne 0 ]; then
+    return 1
+  fi
+  printf "\n"
+
+  cd tests
+
+  if [[ $(ls *.desc | wc -c) -eq 0 ]]; then
+    printf "No tests found!\n\n"
+    return 1
+  fi
+
+  for t in *.desc ; do
+    run_test ${t%.desc}
+    if [ $? -ne 0 ]; then
+      return 1
+    fi
+  done
+
+  return 0
+
+}
+
+cd $BOARD_HARDWARE_PATH/keyboardio/avr/libraries
+
+# Do Kaleidoscope core tests first
+# Idea is to run the super basic tests before the more complicated ones,
+#   as errors will be most clear if we have the simplest repro
+(do_plugin "Kaleidoscope/")
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+for plugin in */; do  # for every subdirectory of libraries/
+  (do_plugin $plugin)
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+done
+
+printf "\nAll tests passed!\n\n"
