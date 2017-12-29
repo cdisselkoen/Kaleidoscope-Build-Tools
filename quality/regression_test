@@ -41,6 +41,24 @@ else
   fi
 fi
 
+if [ -e $1.led ]; then
+  if [ -e results/LED.txt ]; then
+    if [[ $(diff $1.led results/LED.txt 2>&1) ]]; then
+      printf "LED output mismatch!\n\n"
+      diff $1.led results/LED.txt
+      return 1
+    fi
+  else
+    printf "Expected LED output, got none!\n\n"
+    return 1
+  fi
+else
+  if [ -e results/LED.txt ]; then
+    printf "Got LED output, expected none!\n\n"
+    return 1
+  fi
+fi
+
 printf "passed\n"
 return 0
 
